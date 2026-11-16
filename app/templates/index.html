@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trivia de cultura general</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f2f4f8; margin: 0; display: flex; justify-content: center; padding: 2rem 1rem; }
+    main { background: #fff; max-width: 480px; width: 100%; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+    h1 { margin-top: 0; font-size: 1.5rem; }
+    .info { display: flex; justify-content: space-between; color: #555; margin-bottom: 1rem; }
+    #opciones { display: grid; gap: .6rem; }
+    button { padding: .7rem; font-size: 1rem; border: 2px solid #c5cbd8; border-radius: 8px; background: #fff; cursor: pointer; text-align: left; }
+    button:hover:enabled { background: #eef2ff; }
+    button:disabled { cursor: default; }
+    button.correcta { background: #d4f5dc; border-color: #2e9e4f; }
+    button.incorrecta { background: #fadada; border-color: #c43a3a; }
+    #resultado { min-height: 1.5rem; margin: 1rem 0 .5rem; font-weight: bold; }
+    #siguiente { text-align: center; background: #3b5bdb; color: #fff; border-color: #3b5bdb; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Trivia de cultura general</h1>
+    <div class="info">
+      <span id="progreso"></span>
+      <span>Puntaje: <strong id="puntaje">0</strong></span>
+    </div>
+    <h2 id="texto"></h2>
+    <div id="opciones"></div>
+    <p id="resultado" role="status"></p>
+    <button id="siguiente" hidden></button>
+  </main>
+
+  <script>
+    let preguntas = [];
+    let indice = 0;
+    let puntaje = 0;
+
+    const $ = (id) => document.getElementById(id);
+
+    async function iniciar() {
+      const res = await fetch("/api/preguntas");
+      preguntas = await res.json();
+      indice = 0;
+      puntaje = 0;
+      mostrar();
+    }
+
+    function mostrar() {
+      const p = preguntas[indice];
+      $("progreso").textContent = `Pregunta ${indice + 1} de ${preguntas.length}`;
+      $("puntaje").textContent = puntaje;
+      $("texto").textContent = p.texto;
+      $("resultado").textContent = "";
+      $("siguiente").hidden = true;
+      const contenedor = $("opciones");
+      contenedor.innerHTML = "";
+      p.opciones.forEach((texto, i) => {
+        const b = document.createElement("button");
+        b.textContent = texto;
+        b.addEventListener("click", () => responder(p.id, i));
+        contenedor.appendChild(b);
+      });
+    }
+
+    async function responder(id, opcion) {
+      const botones = [...$("opciones").children];
+      botones.forEach((b) => (b.disabled = true));
+      const res = await fetch("/api/responder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, opcion }),
+      });
+      const datos = await res.json();
+      botones[datos.respuesta_correcta].classList.add("correcta");
+      if (datos.correcta) {
+        puntaje++;
+        $("resultado").textContent = "¡Correcto!";
+      } else {
+        botones[opcion].classList.add("incorrecta");
+        $("resultado").textContent = "Incorrecto.";
+      }
+      $("puntaje").textContent = puntaje;
+      const ultima = indice === preguntas.length - 1;
+      $("siguiente").textContent = ultima ? "Ver resultado" : "Siguiente";
+      $("siguiente").hidden = false;
+    }
+
+    $("siguiente").addEventListener("click", () => {
+      if (indice < preguntas.length - 1) {
+        indice++;
+        mostrar();
+      } else {
+        terminar();
+      }
+    });
+
+    function terminar() {
+      $("progreso").textContent = "Fin del juego";
+      $("texto").textContent = `Puntaje final: ${puntaje} de ${preguntas.length}`;
+      $("opciones").innerHTML = "";
+      $("resultado").textContent = "";
+      $("siguiente").textContent = "Jugar de nuevo";
+      $("siguiente").onclick = () => location.reload();
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>
