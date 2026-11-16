@@ -18,19 +18,36 @@
     #resultado { min-height: 1.5rem; margin: 1rem 0 .5rem; font-weight: bold; }
     #siguiente { text-align: center; background: #3b5bdb; color: #fff; border-color: #3b5bdb; }
     [hidden] { display: none; }
+    #inicio label { display: block; margin-bottom: .6rem; }
+    #cantidad { font-size: 1rem; padding: .3rem; margin-left: .4rem; }
+    #empezar { text-align: center; background: #3b5bdb; color: #fff; border-color: #3b5bdb; width: 100%; }
   </style>
 </head>
 <body>
   <main>
     <h1>Trivia de cultura general</h1>
-    <div class="info">
-      <span id="progreso"></span>
-      <span>Puntaje: <strong id="puntaje">0</strong></span>
-    </div>
-    <h2 id="texto"></h2>
-    <div id="opciones"></div>
-    <p id="resultado" role="status"></p>
-    <button id="siguiente" hidden></button>
+    <section id="inicio">
+      <label for="cantidad">¿Cuántas preguntas quieres jugar?
+        <select id="cantidad">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+        </select>
+      </label>
+      <button id="empezar">Empezar</button>
+    </section>
+    <section id="juego" hidden>
+      <div class="info">
+        <span id="progreso"></span>
+        <span>Puntaje: <strong id="puntaje">0</strong></span>
+      </div>
+      <h2 id="texto"></h2>
+      <div id="opciones"></div>
+      <p id="resultado" role="status"></p>
+      <button id="siguiente" hidden></button>
+    </section>
   </main>
 
   <script>
@@ -41,12 +58,17 @@
     const $ = (id) => document.getElementById(id);
 
     async function iniciar() {
-      const res = await fetch("/api/preguntas");
+      const cantidad = $("cantidad").value;
+      const res = await fetch(`/api/preguntas?cantidad=${encodeURIComponent(cantidad)}`);
       preguntas = await res.json();
       indice = 0;
       puntaje = 0;
+      $("inicio").hidden = true;
+      $("juego").hidden = false;
       mostrar();
     }
+
+    $("empezar").addEventListener("click", iniciar);
 
     function mostrar() {
       const p = preguntas[indice];
@@ -105,8 +127,6 @@
       $("siguiente").textContent = "Jugar de nuevo";
       $("siguiente").onclick = () => location.reload();
     }
-
-    iniciar();
   </script>
 </body>
 </html>

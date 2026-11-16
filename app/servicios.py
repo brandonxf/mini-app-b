@@ -43,11 +43,11 @@ class PreguntaNoEncontrada(Exception):
     """El id solicitado no corresponde a ninguna pregunta."""
 
 
-def listar_preguntas() -> list[dict]:
-    """Devuelve las preguntas sin la respuesta correcta."""
+def listar_preguntas(cantidad: int = 5) -> list[dict]:
+    """Devuelve las primeras `cantidad` preguntas sin la respuesta correcta."""
     return [
         {"id": p["id"], "texto": p["texto"], "opciones": list(p["opciones"])}
-        for p in PREGUNTAS
+        for p in PREGUNTAS[:cantidad]
     ]
 
 
